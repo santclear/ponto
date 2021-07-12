@@ -256,17 +256,8 @@ ws.delete_cols(1)
 # Título da planilha
 ws.title = getNomeMes(ponto_primeiro_dia.month)
 
-#todos_celulas = 'A1:H'+str(ws.max_row)
-#ws.move_range(todos_celulas, rows=4, cols=0, translate=True)
-
 aplicarFormulaEFormatarColunaQtdeHoras('E')
 converterCelulasParaFormato('G', 'hh:mm:ss')
-
-celulas_merge = mesclarCelulas('A','B',[])
-celulas_merge = mesclarCelulas('B','C',celulas_merge)
-celulas_merge = mesclarCelulas('C','D',celulas_merge)
-celulas_merge = mesclarCelulas('D','E',celulas_merge)
-mesclarCelulas('E','F',celulas_merge)
 
 qtde_horas_totais = WriteOnlyCell(ws, value='=SUM(B2:B'+ str(ws.max_row) +')')
 tempo_gasto_total = '=SUM(C2:C'+ str(ws.max_row) +')'
@@ -283,5 +274,45 @@ ws[qtde_horas_totais].number_format = '[h]:mm:ss'
 
 tempo_gasto_total = 'G'+str(ws.max_row)
 ws[tempo_gasto_total].number_format = '[h]:mm:ss'
+
+todos_celulas = 'A1:H'+str(ws.max_row)
+ws.move_range(todos_celulas, rows=4, cols=0, translate=True)
+
+celulas_merge = mesclarCelulas('A','B',[])
+celulas_merge = mesclarCelulas('B','C',celulas_merge)
+celulas_merge = mesclarCelulas('C','D',celulas_merge)
+celulas_merge = mesclarCelulas('D','E',celulas_merge)
+mesclarCelulas('E','F',celulas_merge)
+
+ws['A1'] = 'Horas Trabalhadas em '+ getNomeMes(ponto_primeiro_dia.month) +'/'+ str(ponto_primeiro_dia.year)
+ws['A3'] = 'Profissional: SANT\'CLEAR ALI COSTA (DESENVOLVEDOR JAVA) Projeto: PD CASE TCE/SC outsourcing'
+
+ws.merge_cells('A1:H1')
+ws.merge_cells('A3:H3')
+ws.merge_cells('A3:H3')
+
+# FIXME Mesclar Total não funciOna
+#ultima_celula_a = 'A'+str(ws.max_row)
+#qtde_horas_totais = 'D'+str(ws.max_row)
+#qtde_horas_totais_mesclada = ultima_celula_a +':'+ qtde_horas_totais
+#print(qtde_horas_totais_mesclada)
+#ws.merge_cells(qtde_horas_totais_mesclada)
+
+
+from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font
+
+fill = PatternFill("solid", fgColor="00EBF1DE")
+
+ws['A1'].fill = fill
+ws['A3'].fill = fill
+
+ws['A'+str(ws.max_row)].fill = fill
+ws['B'+str(ws.max_row)].fill = fill
+ws['C'+str(ws.max_row)].fill = fill
+ws['D'+str(ws.max_row)].fill = fill
+ws['E'+str(ws.max_row)].fill = fill
+ws['F'+str(ws.max_row)].fill = fill
+ws['G'+str(ws.max_row)].fill = fill
+ws['H'+str(ws.max_row)].fill = fill
 
 wb.save(filename = 'ponto.xlsx')
