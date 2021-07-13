@@ -5,8 +5,6 @@ Created on Fri Jul  9 01:21:56 2021
 @author: santc
 """
 
-# pip install openpyxl
-# conda install -c anaconda openpyxl
 import pandas as pd
 import calendar
 from openpyxl import load_workbook
@@ -22,11 +20,13 @@ print('\n   * calendar')
 print('\n   * datetime')
 print('\n\n########### INÍCIO ############')
 
-fonte_csv = 'x'#input('\nDigite o caminho do arquivo CSV (não é necessário a extensão) exportado pelo JIRA: ')
-arquivo_xlsx = 'y'#input('\nDigite o caminho para salvar o arquivo XLSX (não é necessário a extensão): ')
-input_inicio = '13:00:00'#input('\nDigite a hora de início (hh:mm:ss): ')
-input_fim = '19:00:00'#input('\nDigite a hora de fim (hh:mm:ss): ')
-input_intervalo = '00:15:00'#input('\nDigite a hora de intervalo (hh:mm:ss): ')
+nome_colaborador = input('\nDigite o seu nome: ')
+cargo_colaborador = input('\nDigite o seu cargo: ')
+fonte_csv = input('\nDigite o caminho do arquivo CSV (não é necessário a extensão) exportado pelo JIRA: ')
+arquivo_xlsx = input('\nDigite o caminho para salvar o arquivo XLSX (não é necessário a extensão): ')
+input_inicio = input('\nDigite a hora de início (hh:mm:ss): ')
+input_fim = input('\nDigite a hora de fim (hh:mm:ss): ')
+input_intervalo = input('\nDigite a hora de intervalo (hh:mm:ss): ')
 
 ponto = pd.read_csv(fonte_csv +'.csv', sep = ',', encoding = 'utf-8')
 ponto.head()
@@ -199,9 +199,6 @@ intevalo_delta = criarColunaTimedeltaComMesmoTamanhoDaOrigem(intevalo)
 
 qtde_horas_df = criarDataframeQtdeHorasTimedelta(inicio_delta, fim_delta, intevalo_delta)
 
-# Qtde Horas
-#qtde_horas_totais = calcularHorasTotaisTimedelta('qtde_horas', qtde_horas_df)
-
 qtde_horas = converterColunaHoraTimedeltaParaHoraString('qtde_horas', qtde_horas_df)
 
 ponto['data de Trabalho'] = percorrerTodasStringsDataEExcluirHora('data de Trabalho')
@@ -231,9 +228,6 @@ ponto_merge_dias['qtde_horas'] = alterarNaTParaTimeDeltaZero('qtde_horas')
 
 ponto_merge_dias['data de Trabalho'] = converterColunaTimestampParaStringData('data de Trabalho')
 
-# Tempo Gasto
-#tempo_gasto = getTotalHoras('Horas')
-
 ponto_merge_dias['Horas']
 
 ponto_merge_dias['Horas'] = converterColunaFloatParaStringData('Horas')
@@ -241,10 +235,22 @@ ponto_merge_dias['Horas'] = converterColunaFloatParaStringData('Horas')
 ponto_merge_dias = ponto_merge_dias[['data de Trabalho','inicio','fim','intervalo',
                                      'qtde_horas','Questão-chave','Horas','Emissão de resumo']]
 
-ponto_merge_dias['inicio'] = ponto_merge_dias['inicio'].apply(lambda hora: '' if (hora == '00:00:00' or type(hora) != str) else hora)
-ponto_merge_dias['fim'] = ponto_merge_dias['fim'].apply(lambda hora: '' if (hora == '00:00:00' or type(hora) != str) else hora)
-ponto_merge_dias['intervalo'] = ponto_merge_dias['intervalo'].apply(lambda hora: '00:00:00' if (type(hora) != str) else hora)
-ponto_merge_dias['qtde_horas'] = ponto_merge_dias['qtde_horas'].apply(lambda hora: '00:00:00' if (type(hora) != str) else hora)
+
+
+def handlerHoraTimedeltaOuHoraString(hora, tipo_retorno):
+    if(isinstance(hora, str) and hora == '00:00:00'):
+        return tipo_retorno
+    elif(isinstance(hora, str) and hora != '00:00:00'):
+        return hora
+    elif(isinstance(hora, pd.Timedelta) and hora.value == 0):
+        return tipo_retorno
+    elif(isinstance(hora, pd.Timedelta) and hora.value != 0):
+        return converterSegundosParaStringHora(hora.total_seconds())
+
+ponto_merge_dias['inicio'] = ponto_merge_dias['inicio'].apply(lambda hora: handlerHoraTimedeltaOuHoraString(hora,''))
+ponto_merge_dias['fim'] = ponto_merge_dias['fim'].apply(lambda hora: handlerHoraTimedeltaOuHoraString(hora,''))
+ponto_merge_dias['intervalo'] = ponto_merge_dias['intervalo'].apply(lambda hora: handlerHoraTimedeltaOuHoraString(hora,'00:00:00'))
+ponto_merge_dias['qtde_horas'] = ponto_merge_dias['qtde_horas'].apply(lambda hora: handlerHoraTimedeltaOuHoraString(hora,'00:00:00'))
 
 ponto_merge_dias['data de Trabalho'] = ponto_merge_dias['data de Trabalho'].apply(lambda data_str: prepararTempo(data_str[0:11], data_str[0:11], ''))
 
@@ -310,24 +316,14 @@ celulas_merge = mesclarCelulas('D','E',celulas_merge)
 mesclarCelulas('E','F',celulas_merge)
 
 ws['A1'] = 'Horas Trabalhadas em '+ getNomeMes(ponto_primeiro_dia.month) +'/'+ str(ponto_primeiro_dia.year)
-ws['A3'] = 'Profissional: SANT\'CLEAR ALI COSTA (DESENVOLVEDOR JAVA) Projeto: PD CASE TCE/SC outsourcing'
+ws['A3'] = 'Profissional: '+ nome_colaborador +' ('+ cargo_colaborador +') Projeto: PD CASE TCE/SC outsourcing'
 
 ws.merge_cells('A1:H1')
 ws.merge_cells('A2:H2')
 ws.merge_cells('A3:H3')
 ws.merge_cells('A4:H4')
 
-# FIXME Mesclar Total não funciona
-#ultima_celula_a = 'A'+str(ws.max_row)
-#qtde_horas_totais = 'D'+str(ws.max_row)
-#qtde_horas_totais_mesclada = ultima_celula_a +':'+ qtde_horas_totais
-#print(qtde_horas_totais_mesclada)
-#ws.merge_cells(qtde_horas_totais_mesclada)
-
-
 from openpyxl.styles import PatternFill, Border, Side, Alignment
-
-
 
 fill = PatternFill("solid", fgColor="00EBF1DE")
 
