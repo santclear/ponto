@@ -13,7 +13,22 @@ from openpyxl import load_workbook
 from openpyxl.cell import WriteOnlyCell
 from datetime import timedelta
 
-ponto = pd.read_csv('sant.csv', sep = ',', encoding = 'utf-8')
+print('\n\n########### CONFIGURAÇÕES ############')
+print('\nUse a versão Python 3.x')
+print('\nAs bibliotecas abaixo são necessárias (Instale com "pip install NOME_BIBLIOTECA"):')
+print('\n   * pandas')
+print('\n   * openpyxl')
+print('\n   * calendar')
+print('\n   * datetime')
+print('\n\n########### INÍCIO ############')
+
+fonte_csv = 'x'#input('\nDigite o caminho do arquivo CSV (não é necessário a extensão) exportado pelo JIRA: ')
+arquivo_xlsx = 'y'#input('\nDigite o caminho para salvar o arquivo XLSX (não é necessário a extensão): ')
+input_inicio = '13:00:00'#input('\nDigite a hora de início (hh:mm:ss): ')
+input_fim = '19:00:00'#input('\nDigite a hora de fim (hh:mm:ss): ')
+input_intervalo = '00:15:00'#input('\nDigite a hora de intervalo (hh:mm:ss): ')
+
+ponto = pd.read_csv(fonte_csv +'.csv', sep = ',', encoding = 'utf-8')
 ponto.head()
 ponto.count()
 
@@ -174,9 +189,9 @@ def mesclarCelulas(coluna,proxima_coluna,celulas_merge_param):
 
 ponto = fatiarVerticalmenteDataFrame(0, 4)
 
-inicio = criarColunaTempoStringComLinhasZeradasSeOrigemRepetir('data de Trabalho','13:00:00')
-fim = criarColunaTempoStringComLinhasZeradasSeOrigemRepetir('data de Trabalho','19:00:00')
-intevalo = criarColunaTempoStringComLinhasZeradasSeOrigemRepetir('data de Trabalho','00:15:00')
+inicio = criarColunaTempoStringComLinhasZeradasSeOrigemRepetir('data de Trabalho',input_inicio)
+fim = criarColunaTempoStringComLinhasZeradasSeOrigemRepetir('data de Trabalho',input_fim)
+intevalo = criarColunaTempoStringComLinhasZeradasSeOrigemRepetir('data de Trabalho',input_intervalo)
 
 inicio_delta = criarColunaTimedeltaComMesmoTamanhoDaOrigem(inicio)
 fim_delta = criarColunaTimedeltaComMesmoTamanhoDaOrigem(fim)
@@ -246,9 +261,10 @@ ponto_merge_dias = ponto_merge_dias.rename(
 
 ponto_merge_dias['Tempo Gasto'] = ponto_merge_dias['Tempo Gasto'].apply(lambda hora: timedelta(hours=int(hora[0:2]), minutes=int(hora[3:5]), seconds=int(hora[6:8])))
 
-ponto_merge_dias.to_excel("ponto.xlsx")
+ponto_merge_dias.to_excel(arquivo_xlsx +'.xlsx')
 
-wb = load_workbook(filename = 'ponto.xlsx')
+wb = load_workbook(filename = arquivo_xlsx +'.xlsx')
+
 ws = wb.active
 
 ws.delete_cols(1)
@@ -256,12 +272,21 @@ ws.delete_cols(1)
 # Título da planilha
 ws.title = getNomeMes(ponto_primeiro_dia.month)
 
+ws.column_dimensions["A"].width = 13
+ws.column_dimensions["B"].width = 13
+ws.column_dimensions["C"].width = 13
+ws.column_dimensions["D"].width = 13
+ws.column_dimensions["E"].width = 13
+ws.column_dimensions["F"].width = 13
+ws.column_dimensions["G"].width = 13
+ws.column_dimensions["H"].width = 60
+
 aplicarFormulaEFormatarColunaQtdeHoras('E')
 converterCelulasParaFormato('G', 'hh:mm:ss')
 
 qtde_horas_totais = WriteOnlyCell(ws, value='=SUM(B2:B'+ str(ws.max_row) +')')
 tempo_gasto_total = '=SUM(C2:C'+ str(ws.max_row) +')'
-ws.append(['Total:',qtde_horas_totais,tempo_gasto_total])
+ws.append(['',qtde_horas_totais,tempo_gasto_total])
 
 qtde_horas_totais = 'B'+str(ws.max_row)
 ws.move_range(qtde_horas_totais, cols=3, translate=True)
@@ -288,10 +313,11 @@ ws['A1'] = 'Horas Trabalhadas em '+ getNomeMes(ponto_primeiro_dia.month) +'/'+ s
 ws['A3'] = 'Profissional: SANT\'CLEAR ALI COSTA (DESENVOLVEDOR JAVA) Projeto: PD CASE TCE/SC outsourcing'
 
 ws.merge_cells('A1:H1')
+ws.merge_cells('A2:H2')
 ws.merge_cells('A3:H3')
-ws.merge_cells('A3:H3')
+ws.merge_cells('A4:H4')
 
-# FIXME Mesclar Total não funciOna
+# FIXME Mesclar Total não funciona
 #ultima_celula_a = 'A'+str(ws.max_row)
 #qtde_horas_totais = 'D'+str(ws.max_row)
 #qtde_horas_totais_mesclada = ultima_celula_a +':'+ qtde_horas_totais
@@ -299,20 +325,60 @@ ws.merge_cells('A3:H3')
 #ws.merge_cells(qtde_horas_totais_mesclada)
 
 
-from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font
+from openpyxl.styles import PatternFill, Border, Side, Alignment
+
+
 
 fill = PatternFill("solid", fgColor="00EBF1DE")
 
+border = Border(
+    left=Side(border_style='thin', color='00000000'),
+    right=Side(border_style='thin',color='00000000'),
+    top=Side(border_style='thin',color='00000000'),
+    bottom=Side(border_style='thin',color='00000000'))
+
+alignment = Alignment(
+    horizontal='center', 
+    vertical='center', 
+    text_rotation=0, 
+    wrap_text=False, 
+    shrink_to_fit=False, 
+    indent=0)
+
+
 ws['A1'].fill = fill
 ws['A3'].fill = fill
+for coluna in range(1,9): ws.cell(row=5, column=coluna).fill = fill
 
-ws['A'+str(ws.max_row)].fill = fill
-ws['B'+str(ws.max_row)].fill = fill
-ws['C'+str(ws.max_row)].fill = fill
-ws['D'+str(ws.max_row)].fill = fill
-ws['E'+str(ws.max_row)].fill = fill
-ws['F'+str(ws.max_row)].fill = fill
-ws['G'+str(ws.max_row)].fill = fill
-ws['H'+str(ws.max_row)].fill = fill
+for coluna in range(1,9): ws.cell(row=ws.max_row, column=coluna).fill = fill
 
-wb.save(filename = 'ponto.xlsx')
+for linha in range(1, ws.max_row + 1):
+    for coluna in range(1, 9):
+        ws.cell(row=linha, column=coluna).border = border
+        
+for linha in range(1, ws.max_row + 1):
+    for coluna in range(1, 8):
+        ws.cell(row=linha, column=coluna).alignment = alignment
+
+alignment = Alignment(
+    horizontal='right', 
+    vertical='center', 
+    text_rotation=0, 
+    wrap_text=False, 
+    shrink_to_fit=False, 
+    indent=0)
+
+total = 'D'+ str(ws.max_row)
+ws[total] = 'Total:'
+
+for coluna in range(1,5): ws.cell(row=ws.max_row, column=coluna).alignment = alignment
+
+border = Border(
+    left=Side(border_style=None),
+    right=Side(border_style=None),
+    top=Side(border_style='thin',color='00000000'),
+    bottom=Side(border_style='thin',color='00000000'))
+
+for coluna in range(1,5): ws.cell(row=ws.max_row, column=coluna).border = border
+
+wb.save(filename = arquivo_xlsx +'.xlsx')
